@@ -40,7 +40,7 @@ error do |lane, exception|
 
 end
 
-private_lane :build_app do |options|
+private_lane :build_Testapp do |options|
 
 
   # Update the app name
@@ -102,7 +102,7 @@ end
 # Build and publish the Beta version to Hockeyapp
 lane :beta_hockeyapp do
   # Build
-  build_app(
+  build_Testapp(
     # Not a production release, so add build number and do the color modulation of the icons
     release:false,
     # Change the app name
