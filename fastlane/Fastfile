@@ -93,7 +93,7 @@ private_lane :publish_hockey do |options|
 
   # Send the app to Hockeyapp (fill in your API token!)
   hockey(
-    api_token: "<your api token here>",
+    api_token: "527f548c67894ad3a230e7f6e650d1d6",
     notes: "#{changelog.to_s}",
     release_type: options[:release_type]
   )
