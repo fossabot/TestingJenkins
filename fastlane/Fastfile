@@ -2,131 +2,120 @@ default_platform(:ios)
 
 platform :ios do
 
-# Run this before doing anything else
-before_all do
-
-  # If the GIT status is not clean, abort. We won't want to include junk in the build
-  ensure_git_status_clean
-
-end
-
-# After all the steps have completed succesfully, run this.
-after_all do |lane|
-
-  # Remove all build artifacts, but keep mobileprovisioning profiles since they are stored in GIT
-  clean_build_artifacts(
-    exclude_pattern: ".*\.mobileprovision"
-  )
-
-  # Reset all changes to the git checkout
-  reset_git_repo(
-    force: true
-  )
-
-end
-
-# If there was an error, run this
-error do |lane, exception|
-
-  # Remove all build artifacts, but keep mobileprovisioning profiles since they are stored in GIT
-  clean_build_artifacts(
-    exclude_pattern: ".*\.mobileprovision"
-  )
-
-  # Reset all changes to the git checkout
-  reset_git_repo(
-    force: true
-  )
-
-end
-
-private_lane :build_Testapp do |options|
-
-
-  # Update the app name
-  app_name(
-    plist_path: "#{options[:project_name]}/Info.plist",
-    app_name: options[:app_name]
-  )
-
-  # Update the app identifier
-  update_app_identifier(
-    xcodeproj: "#{options[:project_name]}.xcodeproj",
-    plist_path: "#{options[:project_name]}/Info.plist",
-    app_identifier: options[:app_identifier]
-  )
-
-  # Install the certificate
-  import_certificate(
-    certificate_path: options[:certificate_path],
-    certificate_password: options[:certificate_password],
-    keychain_name: "login.keychain"
-  )
-
-  # Install the provisioning profile
-  update_project_provisioning(
-    xcodeproj: "#{options[:project_name]}.xcodeproj",
-    profile: options[:profile]
-  )
-
-  # Version bump
-  increment_build_number(
-    build_number: options[:build_number]
-  )
-
-  # Build the app
-  gym(
-    scheme: "#{options[:scheme]}",
-    configuration: options[:configuration],
-    provisioning_profile_path: options[:profile],
-    codesigning_identity: options[:codesigning_identity],
-    export_method: options[:export_method]
-  )
-
-end
-
-# Publish to Hockeyapp
-private_lane :publish_hockey do |options|
-
-  # Generate a changelog with GIT since the last successful build in Jenkins
-  changelog = sh("git log --graph --pretty=format:'%h -%d %s <%an>' --abbrev-commit #{ENV['GIT_PREVIOUS_SUCCESSFUL_COMMIT'] || 'HEAD^^^^^'}..HEAD")
-
-  # Send the app to Hockeyapp (fill in your API token!)
-  hockey(
-    api_token: "527f548c67894ad3a230e7f6e650d1d6",
-    notes: "#{changelog.to_s}",
-    release_type: options[:release_type]
+lane :beta do
+  # build_app(scheme: "TestApp")
+  #  gym(
+  #   scheme: "TestApp",
+  #   configuration: "Beta",
+  #   provisioning_profile_path: "./certs/CalAdHocProfile.mobileprovision",
+  #   codesigning_identity: "iPhone Distribution: Ricoh Innovations Private Limited",
+  #   export_method: "ad-hoc"
+  # )
+   
+build_ios_app(
+  configuration: "Debug",
+  scheme: "TestApp",
+  silent: true,
+  clean: true,
+  codesigning_identity: "iPhone Distribution: Ricoh Innovations Private Limited",
+  output_directory: "./", # Destination directory. Defaults to current directory.
+  output_name: "Test-app.ipa",       # specify the name of the .ipa file to generate (including file extension)
+  export_method: "ad-hoc"
+)
+hockey(
+    api_token: "063d4b902a4e47b5a47c0231daf64ef7",
+    notes: "Testing the application to Jenkins",
+    ipa:"./Test-app.ipa"
   )
 end
 
-# Build and publish the Beta version to Hockeyapp
-lane :beta_hockeyapp do
-  # Build
-  build_Testapp(
-    # Not a production release, so add build number and do the color modulation of the icons
-    release:false,
-    # Change the app name
-    app_name:"TestApp",
-    # Set the app id
-    app_identifier:"com.ricohinnovations.TestApp",
-    # Set the path to the certificate to use in building
-    certificate_path:"./fastlane/certs/DistributionCertificate.p12",
-    # Set the password of the p12 certificate file
-    certificate_password:"Ricoh123",
-    # Set the path to the provisioning profile to use (change this!)
-    profile:"./fastlane/certs/CalAdHocProfile.mobileprovision",
-    # What configuration to use, usefull for keeping different API keys etc between environments
-    configuration:"Beta",
-    # Use this codesigning identity (this is the name of the certificate in your keychain)
-    codesigning_identity:"iPhone Distribution: Ricoh Innovations Private Limited",
-    # Export an enterprise app
-    export_method:"enterprise",
-    # the projectname, this is the name of the .xcodeproj file and the folder containing your code in the project
-    project_name:"TestApp",
-    # the build number to use, we use the build number from Jenkins
-    build_number: ENV["BUILD_NUMBER"]
-  )
-  # Push to Hockeyapp as Beta release
-  publish_hockey(release_type: "0")
-end
+# private_lane :build_app do |options|
+
+
+#   # Update the app name
+#   app_name(
+#     plist_path: "#{options[:project_name]}/Info.plist",
+#     app_name: options[:app_name]
+#   )
+
+#   # Update the app identifier
+#   update_app_identifier(
+#     xcodeproj: "#{options[:project_name]}.xcodeproj",
+#     plist_path: "#{options[:project_name]}/Info.plist",
+#     app_identifier: options[:app_identifier]
+#   )
+
+#   # Install the certificate
+#   import_certificate(
+#     certificate_path: options[:certificate_path],
+#     certificate_password: options[:certificate_password],
+#     keychain_name: "login.keychain"
+#   )
+
+#   # Install the provisioning profile
+#   update_project_provisioning(
+#     xcodeproj: "#{options[:project_name]}.xcodeproj",
+#     profile: options[:profile]
+#   )
+
+#   # Version bump
+#   increment_build_number(
+#     build_number: options[:build_number]
+#   )
+
+#   # Build the app
+#   gym(
+#     scheme: "#{options[:scheme]}",
+#     configuration: options[:configuration],
+#     provisioning_profile_path: options[:profile],
+#     codesigning_identity: options[:codesigning_identity],
+#     export_method: options[:export_method]
+#   )
+
+# end
+
+# # Publish to Hockeyapp
+# private_lane :publish_hockey do |options|
+
+#   # Generate a changelog with GIT since the last successful build in Jenkins
+#   changelog = sh("git log --graph --pretty=format:'%h -%d %s <%an>' --abbrev-commit #{ENV['GIT_PREVIOUS_SUCCESSFUL_COMMIT'] || 'HEAD^^^^^'}..HEAD")
+
+#   # Send the app to Hockeyapp (fill in your API token!)
+#   hockey(
+#     api_token: "527f548c67894ad3a230e7f6e650d1d6",
+#     notes: "#{changelog.to_s}",
+#     release_type: options[:release_type]
+#   )
+# end
+
+# # Build and publish the Beta version to Hockeyapp
+# lane :beta_hockeyapp do
+#   # Build
+#   build_app (
+#     # Not a production release, so add build number and do the color modulation of the icons
+#     release:false,
+#     # Change the app name
+#     app_name:"TestApp",
+#     # Set the app id
+#     app_identifier:"com.ricohinnovations.TestApp",
+#     # Set the path to the certificate to use in building
+#     certificate_path:"./fastlane/certs/DistributionCertificate.p12",
+#     # Set the password of the p12 certificate file
+#     certificate_password:"Ricoh123",
+#     # Set the path to the provisioning profile to use (change this!)
+#     profile:"./fastlane/certs/CalAdHocProfile.mobileprovision",
+#     # What configuration to use, usefull for keeping different API keys etc between environments
+#     configuration:"Beta",
+#     # Use this codesigning identity (this is the name of the certificate in your keychain)
+#     codesigning_identity:"iPhone Distribution: Ricoh Innovations Private Limited",
+#     # Export an enterprise app
+#     export_method:"enterprise",
+#     # the projectname, this is the name of the .xcodeproj file and the folder containing your code in the project
+#     project_name:"TestApp",
+#     # the build number to use, we use the build number from Jenkins
+#     build_number: ENV["BUILD_NUMBER"]
+#   )
+#   # Push to Hockeyapp as Beta release
+#   publish_hockey(release_type: "0")
+# end
 end
