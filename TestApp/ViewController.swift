@@ -14,6 +14,9 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
     }
+    func addtwoNumbers() -> Int {
+        return 1 + 1
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
